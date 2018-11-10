@@ -9,8 +9,8 @@
 using namespace std;
 
 static PyMethodDef methods[] = {
-  {"_model_alloc",
-   py_model_alloc, METH_VARARGS,
+  {"_model_kaiser_alloc",
+   py_model_kaiser_alloc, METH_VARARGS,
    "temp"},
   
   {NULL, NULL, 0, NULL}
