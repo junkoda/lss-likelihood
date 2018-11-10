@@ -9,9 +9,12 @@
 using namespace std;
 
 static PyMethodDef methods[] = {
-  {"_model_kaiser_alloc",
-   py_model_kaiser_alloc, METH_VARARGS,
-   "temp"},
+  {"_model_exp_moment", py_model_exp_moment, METH_VARARGS,
+   "_model_kaiser_eval(a)"},
+  {"_model_kaiser_alloc", py_model_kaiser_alloc, METH_VARARGS,
+   "_model_kaiser_alloc(), returns _Model pointer"},
+  {"_model_kaiser_eval", py_model_kaiser_eval, METH_VARARGS,
+   "_model_kaiser_eval(_model, b, f, sigma, P0, P2, P4)"},
   
   {NULL, NULL, 0, NULL}
 };
