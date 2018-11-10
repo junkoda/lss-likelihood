@@ -96,3 +96,29 @@ void py_util_vector_as_array(const char name[], vector<double>& v,
 
   PyBuffer_Release(&buf);
 }
+
+void py_util_sequence_as_vector(const char name[], PyObject* py_list,
+				vector<double>& v)
+{
+  char msg[128];
+  if(PySequence_Check(py_list) == 0) {
+    sprintf(msg, "%s is not is not a sequence", name);
+    PyErr_SetString(PyExc_TypeError, msg);
+    throw TypeError();
+  }
+
+  const int len= (int) PySequence_Length(py_list);
+  v.reserve(len);
+  
+  for(int i=0; i<len; ++i) {
+    PyObject* py_float= PySequence_GetItem(py_list, i);
+    if(!PyFloat_Check(py_float)) {
+      sprintf(msg, "%s[%d] is float", name, i);
+      PyErr_SetString(PyExc_TypeError, msg);
+      throw TypeError();
+    }
+
+    v.push_back(PyFloat_AsDouble(py_float));
+    Py_DECREF(py_float);
+  }
+}

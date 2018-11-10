@@ -12,5 +12,8 @@ void py_util_array_as_vector(const char name[],
 void py_util_vector_as_array(const char name[], std::vector<double>& v,
 			     PyObject* py_obj);
 
+void py_util_sequence_as_vector(const char name[], PyObject* py_list,
+				std::vector<double>& v);
+
 
 #endif

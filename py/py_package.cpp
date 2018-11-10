@@ -6,6 +6,7 @@
 
 #include "py_model.h"
 #include "py_data.h"
+#include "py_likelihood.h"
 
 using namespace std;
 
@@ -18,6 +19,10 @@ static PyMethodDef methods[] = {
    "_model_kaiser_eval(_model, b, f, sigma, P0, P2, P4)"},
   {"_data_alloc", py_data_alloc, METH_VARARGS,
    "_data_alloc(P0, P2, P4)"},
+  {"_likelihood_alloc", py_likelihood_alloc, METH_VARARGS,
+   "_data_alloc(_data, _model, cov_inv)"},
+  {"_likelihood_chi2", py_likelihood_chi2,  METH_VARARGS,
+   "_data_alloc(_data, _model, _likelihood, params)"},   
 
   {NULL, NULL, 0, NULL}
 };

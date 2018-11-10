@@ -28,6 +28,6 @@ PyObject* py_data_alloc(PyObject* self, PyObject* args)
   
   py_util_array_as_vector("P2", py_P2, data->P2, len);
   py_util_array_as_vector("P4", py_P4, data->P4, len);
-  
+
   return PyCapsule_New(data, "_Data", py_data_free);
 }

@@ -11,33 +11,10 @@ using namespace std;
 
 static const double sqrt_pi = sqrt(M_PI);
 
-//
-//
-//
-class Model {
- public:
-  virtual ~Model();
-  virtual void evaluate(const double param[],
-			vector<double>& v_P0,
-			vector<double>& v_P2,
-			vector<double>& v_P4) const = 0;
-
-};
-
-class Kaiser : public Model {
- public:
-  Kaiser(PyObject* py_k, PyObject* py_P);
-  virtual void evaluate(const double param[],
-			vector<double>& v_P0,
-			vector<double>& v_P2,
-			vector<double>& v_P4) const;
-  vector<double> v_k, v_P;
-};
 
 //
 // static function
 //
-
 
 static void py_model_free(PyObject *obj)
 {
@@ -189,7 +166,8 @@ PyObject* py_model_kaiser_eval(PyObject* self, PyObject* args)
   
   const size_t n= kaiser->v_k.size();
   vector<double> v_P0(n), v_P2(n), v_P4(n);
-  double params[]= {b, f, sigma};
+  vector<double> params;
+  params[0]= b; params[1]= f; params[2]= sigma;
   
   kaiser->evaluate(params, v_P0, v_P2, v_P4);
   
@@ -223,7 +201,7 @@ Kaiser::Kaiser(PyObject* py_k, PyObject* py_P)
   py_util_array_as_vector("P", py_P, v_P, v_k.size());
 }
 
-void Kaiser::evaluate(const double params[],
+void Kaiser::evaluate(const vector<double>& params,
 		      vector<double>& v_P0,
 		      vector<double>& v_P2,
 		      vector<double>& v_P4) const
@@ -232,6 +210,7 @@ void Kaiser::evaluate(const double params[],
   assert(v_P0.size() == n);
   assert(v_P2.size() == n);
   assert(v_P4.size() == n);
+  assert(params.size() == 3);
 
   const double b= params[0];
   const double f= params[1];
