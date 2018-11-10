@@ -5,6 +5,7 @@
 #include "Python.h"
 
 #include "py_model.h"
+#include "py_data.h"
 
 using namespace std;
 
@@ -15,7 +16,9 @@ static PyMethodDef methods[] = {
    "_model_kaiser_alloc(), returns _Model pointer"},
   {"_model_kaiser_eval", py_model_kaiser_eval, METH_VARARGS,
    "_model_kaiser_eval(_model, b, f, sigma, P0, P2, P4)"},
-  
+  {"_data_alloc", py_data_alloc, METH_VARARGS,
+   "_data_alloc(P0, P2, P4)"},
+
   {NULL, NULL, 0, NULL}
 };
 
