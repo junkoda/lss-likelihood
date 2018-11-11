@@ -140,7 +140,7 @@ PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args)
   return NULL;
 }
 
-PyObject* py_model_kaiser_eval(PyObject* self, PyObject* args)
+PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args)
 {
   // _model_kaiser_alloc(_model, b, f, sigma, P0, P2, P4)
   //
@@ -151,7 +151,7 @@ PyObject* py_model_kaiser_eval(PyObject* self, PyObject* args)
   //
   double b, f, sigma;
   PyObject *py_model, *py_P0, *py_P2, *py_P4;
-    
+
   if(!PyArg_ParseTuple(args, "OdddOOO",
 		       &py_model,
 		       &b, &f, &sigma,
@@ -163,12 +163,13 @@ PyObject* py_model_kaiser_eval(PyObject* self, PyObject* args)
   py_assert_ptr(model);
 
   Kaiser* const kaiser= dynamic_cast<Kaiser*>(model);
-  
+
   const size_t n= kaiser->v_k.size();
-  vector<double> v_P0(n), v_P2(n), v_P4(n);
-  vector<double> params;
-  params[0]= b; params[1]= f; params[2]= sigma;
   
+  vector<double> v_P0(n), v_P2(n), v_P4(n);
+  vector<double> params(3, 0.0);
+  params[0]= b; params[1]= f; params[2]= sigma;
+
   kaiser->evaluate(params, v_P0, v_P2, v_P4);
   
   try {

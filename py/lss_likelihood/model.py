@@ -18,8 +18,8 @@ class Kaiser:
         P2 = np.empty_like(self._k)
         P4 = np.empty_like(self._k)
 
-        c._model_kaiser_eval(self._model, b, f, sigma,
-                             P0, P2, P4)
+        c._model_kaiser_evaluate(self._model, b, f, sigma,
+                                 P0, P2, P4)
 
         d = {}
         d['b'] = b
