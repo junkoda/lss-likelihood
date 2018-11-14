@@ -2,10 +2,12 @@
 #include <cmath>
 #include <cassert>
 
-#include "py_model.h"
+
 #include "py_util.h"
 #include "py_error.h"
 #include "py_assert.h"
+#include "py_multipole.h"
+#include "py_model.h"
 
 using namespace std;
 
@@ -25,6 +27,7 @@ static void py_model_free(PyObject *obj)
 
   delete model;
 }
+
 
 //
 // static inline
@@ -124,14 +127,17 @@ PyObject* py_model_exp_moment(PyObject* self, PyObject* args)
 
 PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args)
 {
-  // _model_kaiser_alloc(k, P)
+  // _model_kaiser_alloc(k_min, k_max, dk, boxsize, k, P)
+  double k_min, k_max, dk, boxsize;
   PyObject *py_k, *py_P;
     
-  if(!PyArg_ParseTuple(args, "OO", &py_k, &py_P))
+  if(!PyArg_ParseTuple(args, "ddddOO",
+		       &k_min, &k_max, &dk, &boxsize, &py_k, &py_P))
     return NULL;
 
   try {
-    return PyCapsule_New(new Kaiser(py_k, py_P), "_Model", py_model_free);
+    return PyCapsule_New(new Kaiser(k_min, k_max, dk, boxsize, py_k, py_P),
+			 "_Model", py_model_free);
   }
   catch(TypeError) {
     return NULL;
@@ -164,7 +170,7 @@ PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args)
 
   Kaiser* const kaiser= dynamic_cast<Kaiser*>(model);
 
-  const size_t n= kaiser->v_k.size();
+  const size_t n= kaiser->nbin;
   
   vector<double> v_P0(n), v_P2(n), v_P4(n);
   vector<double> params(3, 0.0);
@@ -187,6 +193,14 @@ PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args)
 //
 // Model implementation
 //
+Model::Model(const double k_min_, const double k_max_, const double dk_,
+	     const double boxsize_) :
+  k_min(k_min_), k_max(k_max_), dk(dk_), boxsize(boxsize_),
+  nbin(ceil((k_max - k_min)/dk))
+{
+  modes= multipole_construct_discrete_wavevectors(k_min, k_max, dk, boxsize);
+}
+
 Model::~Model()
 {
 
@@ -196,7 +210,10 @@ Model::~Model()
 //
 // Kaiser
 //
-Kaiser::Kaiser(PyObject* py_k, PyObject* py_P)
+/*
+Kaiser::Kaiser(const double k_min_, const double k_max_, const double dk_,
+	       PyObject* py_k, PyObject* py_P) :
+  Model(k_min_, k_max_, dk_)
 {
   py_util_array_as_vector("k", py_k, v_k);
   py_util_array_as_vector("P", py_P, v_P, v_k.size());
@@ -249,6 +266,83 @@ void Kaiser::evaluate(const vector<double>& params,
   }
 
 }
+*/
 
+Kaiser::Kaiser(const double k_min_, const double k_max_, const double dk_,
+	       const double boxsize,
+	       PyObject* py_k, PyObject* py_P) :
+  Model(k_min_, k_max_, dk_, boxsize)
+{
+  PowerSpectrum ps(py_k, py_P);
+
+  // Set realspace power spectrum to modes
+  for(int ibin=0; ibin<nbin; ++ibin) {
+    for(vector<DiscreteWaveVector>::iterator p= modes[ibin].begin();
+	p != modes[ibin].end(); ++p) {
+      p->Pdd= ps.P(p->k);
+    }
+  } 
+  
+  // Compute coefficients of discrete Legendre polynomials `coef`
+  multipole_compute_discrete_legendre(k_min, k_max, dk,
+				      boxsize, coef);
+
+
+}
+
+void Kaiser::evaluate(const vector<double>& params,
+		      vector<double>& v_P0,
+		      vector<double>& v_P2,
+		      vector<double>& v_P4) const
+{
+  assert(v_P0.size() == nbin);
+  assert(v_P2.size() == nbin);
+  assert(v_P4.size() == nbin);
+  assert(params.size() == 3);
+
+  const double b= params[0];
+  const double f= params[1];
+  const double s= params[2];
+
+  const double b2= b*b;
+  const double bf2= 2.0*b*f;
+  const double ff= f*f;
+
+  for(size_t i=0; i<nbin; ++i) {
+    int nmodes= 0;
+    double P0= 0.0;
+    double P2= 0.0;
+    double P4= 0.0;
+    
+    for(vector<DiscreteWaveVector>::iterator p= modes[i].begin();
+	p != modes[i].end(); ++p) {
+      double k= p->k;
+      double a= k*s;
+      double a2= a*a;
+
+      double mu2= p->mu2;
+      double mu4= mu2*mu2;
+
+      nmodes += p->w;
+
+      double P= p->w*p->Pdd*exp(-a2);
+      double l2= coef[5*i] + coef[5*i + 1]*mu2;
+      double l4= coef[5*i + 2] + coef[5*i + 3]*mu2
+	         + coef[5*i + 4]*mu4;
+      
+      P0 += (b2 + bf2*mu2 + ff*mu4)*P;
+      P2 += l2*(b2 + bf2*mu2 + ff*mu4)*P;
+      P4 += l4*(b2 + bf2*mu2 + ff*mu4)*P;
+    }
+
+    double fac= 1.0/static_cast<double>(nmodes);
+
+    
+    // (2l + 1) for multipole moments
+    v_P0[i]= fac*P0;
+    v_P2[i]= 5.0*fac*P2;
+    v_P4[i]= 9.0*fac*P4;
+  }
+}
 
 

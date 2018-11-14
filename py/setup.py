@@ -50,6 +50,7 @@ setup(name='lss_likelihood',
                     ['py_package.cpp', 'py_util.cpp',
                      'py_model.cpp', 'py_data.cpp',
                      'py_likelihood.cpp',
+                     'py_multipole.cpp'
                     ],
                     include_dirs = idirs,
                     libraries = libs,
