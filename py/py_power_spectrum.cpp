@@ -7,10 +7,10 @@
 
 using namespace std;
 
-PowerSpectrum::PowerSectrum(PyObject* py_k, PyObject* py_P)
+PowerSpectrum::PowerSpectrum(PyObject* py_k, PyObject* py_P)
 {
-  if(!PyArg_ParseTuple(args, "OO", &py_k, &py_P))
-    return NULL;
+  //if(!PyArg_ParseTuple(args, "OO", &py_k, &py_P))
+  //  return NULL;
 
   vector<double> v_k, v_P;
   py_util_array_as_vector("k", py_k, v_k, 0);
@@ -20,7 +20,7 @@ PowerSpectrum::PowerSectrum(PyObject* py_k, PyObject* py_P)
 
   acc= gsl_interp_accel_alloc();
   spline= gsl_spline_alloc(gsl_interp_cspline, n);
-  gsl_spline_init(spline, v_k.data(), v_P.data, n);
+  gsl_spline_init(spline, v_k.data(), v_P.data(), n);
 }
 
 PowerSpectrum::~PowerSpectrum()

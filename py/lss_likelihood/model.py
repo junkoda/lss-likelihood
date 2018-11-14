@@ -7,16 +7,17 @@ def exp_moment(a):
     return c._model_exp_moment(a)
 
 class Kaiser:
-    def __init__(self, k, P, k_eval):
-        P_eval = interp1d(k, P, kind='cubic')(k_eval)
-        self._model = c._model_kaiser_alloc(k_eval, P_eval)
-        self._k = k_eval
-        self.P = P_eval 
+    def __init__(self, k_min, k_max, dk, boxsize, k, P):
+        self._model = c._model_kaiser_alloc(k_min, k_max, dk, boxsize,
+                                            k, P)
+        #self._k = k_eval
+        #self.P = P_eval
+        self.nbin = c._model_get_nbin(self._model)
 
     def evaluate(self, b, f, sigma):
-        P0 = np.empty_like(self._k)
-        P2 = np.empty_like(self._k)
-        P4 = np.empty_like(self._k)
+        P0 = np.empty(self.nbin)
+        P2 = np.empty_like(P0)
+        P4 = np.empty_like(P0)
 
         c._model_kaiser_evaluate(self._model, b, f, sigma,
                                  P0, P2, P4)
@@ -25,7 +26,6 @@ class Kaiser:
         d['b'] = b
         d['f'] = f
         d['sigma'] = sigma
-        d['k'] = self._k
         d['P0'] = P0
         d['P2'] = P2
         d['P4'] = P4

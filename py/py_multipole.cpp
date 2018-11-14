@@ -12,8 +12,6 @@ multipole_construct_discrete_wavevectors(
   const int ik_max= ceil(k_max/fac);
   const int nbin= ceil((k_max - k_min)/dk);
 
-  int weight= 0;
-
   vector<DiscreteWaveVector>* const modes
     = new vector<DiscreteWaveVector>[nbin];
 

@@ -56,7 +56,8 @@ class Kaiser : public Model {
 };
 
 
-PyObject* py_model_alloc(PyObject* self, PyObject* args);
+//PyObject* py_model_alloc(PyObject* self, PyObject* args);
+PyObject* py_model_get_nbin(PyObject* self, PyObject* args);
 PyObject* py_model_exp_moment(PyObject* self, PyObject* args);
 
 PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args);

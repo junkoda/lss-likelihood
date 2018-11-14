@@ -94,10 +94,26 @@ static inline double exp_moment8(const double a,
 // Python interface
 //
 
-// !!! deprecated !!!
+/*
 PyObject* py_model_alloc(PyObject* self, PyObject* args)
 {
   return NULL;
+}
+*/
+
+PyObject* py_model_get_nbin(PyObject* self, PyObject* args)
+{
+  PyObject *py_model;
+
+  if(!PyArg_ParseTuple(args, "O",
+		       &py_model))
+    return NULL;
+
+  Model* const model=
+    (Model*) PyCapsule_GetPointer(py_model, "_Model");
+  py_assert_ptr(model);
+
+  return Py_BuildValue("i", model->nbin);
 }
 
 PyObject* py_model_exp_moment(PyObject* self, PyObject* args)
@@ -295,9 +311,10 @@ void Kaiser::evaluate(const vector<double>& params,
 		      vector<double>& v_P2,
 		      vector<double>& v_P4) const
 {
-  assert(v_P0.size() == nbin);
-  assert(v_P2.size() == nbin);
-  assert(v_P4.size() == nbin);
+  size_t n= static_cast<size_t>(nbin);
+  assert(v_P0.size() == n);
+  assert(v_P2.size() == n);
+  assert(v_P4.size() == n);
   assert(params.size() == 3);
 
   const double b= params[0];
@@ -308,7 +325,7 @@ void Kaiser::evaluate(const vector<double>& params,
   const double bf2= 2.0*b*f;
   const double ff= f*f;
 
-  for(size_t i=0; i<nbin; ++i) {
+  for(size_t i=0; i<n; ++i) {
     int nmodes= 0;
     double P0= 0.0;
     double P2= 0.0;
