@@ -16,11 +16,61 @@ multipole_construct_discrete_wavevectors(
     = new vector<DiscreteWaveVector>[nbin];
 
   DiscreteWaveVector kvec;
-  
-  for(int ikx=0; ikx<=ik_max; ++ikx) {
-    for(int iky=ikx; iky<=ik_max; ++iky) {
+
+  /// DEBUG!!!
+  /*
+  for(int ikx=-ik_max; ikx<=ik_max; ++ikx) {
+    for(int iky=-ik_max; iky<=ik_max; ++iky) {
       int iz0 = !(ikx > 0 || (ikx == 0 && iky > 0));
       for(int ikz=iz0; ikz<=ik_max; ++ikz) {
+	double ik2= static_cast<double>(ikx*ikx + iky*iky + ikz*ikz);
+	double ik= sqrt(ik2);
+
+	int ibin= floor((fac*ik - k_min)/dk);
+	if(!(0 <= ibin && ibin < nbin))
+	  continue;
+
+	double mu2= static_cast<double>(ikz*ikz)/ik2;
+		
+	kvec.k= fac*ik;
+	kvec.mu2= mu2;
+	kvec.w= 1;
+	
+	modes[ibin].push_back(kvec);
+      }
+    }
+  }
+  */
+
+  for(int ikx=0; ikx<=ik_max; ++ikx) {
+    for(int iky=ikx; iky<=ik_max; ++iky) {
+      //
+      // ikz = 0
+      //
+      if(iky > 0) {      
+	double ik2= static_cast<double>(ikx*ikx + iky*iky);
+	double ik= sqrt(ik2);
+	int ibin= floor((fac*ik - k_min)/dk);
+
+	int weight= 0;
+	if(0 <= ibin && ibin < nbin) {
+	  // ikz == 0
+	  if(ikx == 0 || ikx == iky)
+	    weight= 2;
+	  else
+	    weight= 4;
+	
+	  kvec.k= fac*ik;
+	  kvec.mu2= 0.0;
+	  kvec.w= weight;      
+	  modes[ibin].push_back(kvec);
+	}
+      }
+
+      //
+      // ikz > 0
+      //
+      for(int ikz=1; ikz<=ik_max; ++ikz) {
 	double ik2= static_cast<double>(ikx*ikx + iky*iky + ikz*ikz);
 	double ik= sqrt(ik2);
 

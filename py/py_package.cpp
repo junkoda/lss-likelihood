@@ -15,6 +15,8 @@ static PyMethodDef methods[] = {
    "_model_exp_moment(a)"},
   {"_model_get_nbin", py_model_get_nbin, METH_VARARGS,
    "_model_get_nbin(_model)"},
+  {"_model_nmodes", py_model_nmodes, METH_VARARGS,
+   "_model_nmodes(_model)"},
   {"_model_kaiser_alloc", py_model_kaiser_alloc, METH_VARARGS,
    "_model_kaiser_alloc(), returns _Model pointer"},
   {"_model_kaiser_evaluate", py_model_kaiser_evaluate, METH_VARARGS,

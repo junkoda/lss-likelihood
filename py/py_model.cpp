@@ -116,6 +116,39 @@ PyObject* py_model_get_nbin(PyObject* self, PyObject* args)
   return Py_BuildValue("i", model->nbin);
 }
 
+PyObject* py_model_nmodes(PyObject* self, PyObject* args)
+{
+  // _model_nmodes(_model)
+  //
+  // Args:
+  // _model: _Model pointer
+  //
+  PyObject *py_model, *py_nmodes;
+
+  if(!PyArg_ParseTuple(args, "OO",
+		       &py_model,
+		       &py_nmodes))
+    return NULL;
+
+  Model* const model=
+    (Model*) PyCapsule_GetPointer(py_model, "_Model");
+  py_assert_ptr(model);
+
+  const size_t n= model->nbin;
+  
+  vector<double> v_nmodes(n);
+  model->nmodes(v_nmodes);
+  
+  try {
+    py_util_vector_as_array("nmodes", v_nmodes, py_nmodes);
+  }
+  catch(TypeError) {
+    return NULL;
+  }
+
+  Py_RETURN_NONE;
+}
+
 PyObject* py_model_exp_moment(PyObject* self, PyObject* args)
 {
   double a;
@@ -221,6 +254,24 @@ Model::~Model()
 {
 
 }
+
+void Model::nmodes(vector<double>& v_nmodes) const
+{
+  size_t n= static_cast<size_t>(nbin);
+  assert(v_nmodes.size() == n);
+
+  for(size_t i=0; i<n; ++i) {
+    int nmodes= 0;
+    
+    for(vector<DiscreteWaveVector>::iterator p= modes[i].begin();
+	p != modes[i].end(); ++p) {
+      nmodes += p->w;
+    }
+
+    v_nmodes[i]= nmodes;
+  }
+}
+
 
 
 //
@@ -334,15 +385,12 @@ void Kaiser::evaluate(const vector<double>& params,
     for(vector<DiscreteWaveVector>::iterator p= modes[i].begin();
 	p != modes[i].end(); ++p) {
       double k= p->k;
-      double a= k*s;
-      double a2= a*a;
-
       double mu2= p->mu2;
       double mu4= mu2*mu2;
 
       nmodes += p->w;
 
-      double P= p->w*p->Pdd*exp(-a2);
+      double P= p->w*p->Pdd*exp(-k*k*s*s*mu2);
       double l2= coef[5*i] + coef[5*i + 1]*mu2;
       double l4= coef[5*i + 2] + coef[5*i + 3]*mu2
 	         + coef[5*i + 4]*mu4;
