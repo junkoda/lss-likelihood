@@ -246,7 +246,7 @@ PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args)
 //
 Model::Model(const double k_min_, const double dk_, const int nbin_,
 	     const double boxsize_) :
-  k_min(k_min_), dk(dk_), nbin(nbin_), boxsize(boxsize_)
+  k_min(k_min_), dk(dk_), boxsize(boxsize_), nbin(nbin_)
 {
   modes= multipole_construct_discrete_wavevectors(k_min, dk, nbin, boxsize);
 }
