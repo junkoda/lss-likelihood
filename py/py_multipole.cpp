@@ -5,42 +5,18 @@ using namespace std;
 
 vector<DiscreteWaveVector>*
 multipole_construct_discrete_wavevectors(
-	  const double k_min, const double k_max, const double dk,
+	  const double k_min, const double dk, const int nbin,
 	  const double boxsize)
 {
   const double fac= 2*M_PI/boxsize;
-  const int ik_max= ceil(k_max/fac);
-  const int nbin= ceil((k_max - k_min)/dk);
+  const int ik_max = ceil((k_min + nbin*dk)/fac);
+  //const int ik_max= ceil(k_max/fac);
+  //const int nbin= ceil((k_max - k_min)/dk);
 
   vector<DiscreteWaveVector>* const modes
     = new vector<DiscreteWaveVector>[nbin];
 
   DiscreteWaveVector kvec;
-
-  /// DEBUG!!!
-  /*
-  for(int ikx=-ik_max; ikx<=ik_max; ++ikx) {
-    for(int iky=-ik_max; iky<=ik_max; ++iky) {
-      int iz0 = !(ikx > 0 || (ikx == 0 && iky > 0));
-      for(int ikz=iz0; ikz<=ik_max; ++ikz) {
-	double ik2= static_cast<double>(ikx*ikx + iky*iky + ikz*ikz);
-	double ik= sqrt(ik2);
-
-	int ibin= floor((fac*ik - k_min)/dk);
-	if(!(0 <= ibin && ibin < nbin))
-	  continue;
-
-	double mu2= static_cast<double>(ikz*ikz)/ik2;
-		
-	kvec.k= fac*ik;
-	kvec.mu2= mu2;
-	kvec.w= 1;
-	
-	modes[ibin].push_back(kvec);
-      }
-    }
-  }
-  */
 
   for(int ikx=0; ikx<=ik_max; ++ikx) {
     for(int iky=ikx; iky<=ik_max; ++iky) {
@@ -107,12 +83,14 @@ multipole_construct_discrete_wavevectors(
   return modes;
 }
 
-void multipole_compute_discrete_legendre(const double k_min, const double k_max, const double dk, const double boxsize, vector<double>& coef)
+void multipole_compute_discrete_legendre(
+       const double k_min, const double dk, const int nbin,
+       const double boxsize, vector<double>& coef)
 {
   // Compute coefficients of discrete legendre polynomials
   // k_min   (double): [h/Mpc]
-  // k_max   (double): [h/Mpc]
   // dk      (double): [h/Mpc] bin width
+  // nbin    (int):    number of k bins
   // boxsize (double): Periodic box length on a side
   //
   // Result
@@ -125,9 +103,7 @@ void multipole_compute_discrete_legendre(const double k_min, const double k_max,
 
   
   const double fac= 2*M_PI/boxsize;
-  const int ik_max= ceil(k_max/fac);
-
-  const int nbin= ceil((k_max - k_min)/dk);
+  const int ik_max= ceil((k_min + nbin*dk)/fac);
 
   vector<int> nmodes(nbin);
   vector<double> mu2(nbin), mu4(nbin), mu6(nbin), mu8(nbin);

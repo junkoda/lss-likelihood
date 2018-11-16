@@ -34,7 +34,10 @@ double Likelihood::chi2(const vector<double>& params) const
   // Likelihood evaluation
   //
   const size_t n= data->P0.size();
-  vector<double> model_P0(n), model_P2(n), model_P4(n);
+  assert(n == static_cast<size_t>(model->nbin));
+
+  vector<double> model_P0(model->nbin),
+    model_P2(model->nbin), model_P4(model->nbin);
   assert(cov_inv.size() == 9*n);
 
   model->evaluate(params, model_P0, model_P2, model_P4);

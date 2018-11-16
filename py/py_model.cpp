@@ -1,3 +1,4 @@
+//#include <iostream> // DEBUG
 #include <vector>
 #include <cmath>
 #include <cassert>
@@ -176,16 +177,17 @@ PyObject* py_model_exp_moment(PyObject* self, PyObject* args)
 
 PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args)
 {
-  // _model_kaiser_alloc(k_min, k_max, dk, boxsize, k, P)
-  double k_min, k_max, dk, boxsize;
+  // _model_kaiser_alloc(k_min, dk, nbin, boxsize, k, P)
+  double k_min, dk, boxsize;
+  int nbin;
   PyObject *py_k, *py_P;
     
-  if(!PyArg_ParseTuple(args, "ddddOO",
-		       &k_min, &k_max, &dk, &boxsize, &py_k, &py_P))
+  if(!PyArg_ParseTuple(args, "ddidOO",
+		       &k_min, &dk, &nbin, &boxsize, &py_k, &py_P))
     return NULL;
 
   try {
-    return PyCapsule_New(new Kaiser(k_min, k_max, dk, boxsize, py_k, py_P),
+    return PyCapsule_New(new Kaiser(k_min, dk, nbin, boxsize, py_k, py_P),
 			 "_Model", py_model_free);
   }
   catch(TypeError) {
@@ -242,12 +244,11 @@ PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args)
 //
 // Model implementation
 //
-Model::Model(const double k_min_, const double k_max_, const double dk_,
+Model::Model(const double k_min_, const double dk_, const int nbin_,
 	     const double boxsize_) :
-  k_min(k_min_), k_max(k_max_), dk(dk_), boxsize(boxsize_),
-  nbin(ceil((k_max - k_min)/dk))
+  k_min(k_min_), dk(dk_), nbin(nbin_), boxsize(boxsize_)
 {
-  modes= multipole_construct_discrete_wavevectors(k_min, k_max, dk, boxsize);
+  modes= multipole_construct_discrete_wavevectors(k_min, dk, nbin, boxsize);
 }
 
 Model::~Model()
@@ -335,10 +336,10 @@ void Kaiser::evaluate(const vector<double>& params,
 }
 */
 
-Kaiser::Kaiser(const double k_min_, const double k_max_, const double dk_,
-	       const double boxsize,
+Kaiser::Kaiser(const double k_min_, const double dk_, const int nbin_,
+	       const double boxsize_,
 	       PyObject* py_k, PyObject* py_P) :
-  Model(k_min_, k_max_, dk_, boxsize)
+  Model(k_min_, dk_, nbin_, boxsize_)
 {
   PowerSpectrum ps(py_k, py_P);
 
@@ -351,7 +352,7 @@ Kaiser::Kaiser(const double k_min_, const double k_max_, const double dk_,
   } 
   
   // Compute coefficients of discrete Legendre polynomials `coef`
-  multipole_compute_discrete_legendre(k_min, k_max, dk,
+  multipole_compute_discrete_legendre(k_min, dk, nbin,
 				      boxsize, coef);
 
 

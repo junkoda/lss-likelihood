@@ -11,7 +11,7 @@
 //
 class Model {
  public:
-  Model(const double k_min_, const double k_max_, const double dk_,
+  Model(const double k_min_, const double dk_, const int nbin_,
 	const double boxsize);
   virtual ~Model();
   virtual void evaluate(const std::vector<double>& param,
@@ -20,7 +20,7 @@ class Model {
 			std::vector<double>& v_P4) const = 0;
   void nmodes(std::vector<double>& v_nmodes) const;
     
-  const double k_min, k_max, dk, boxsize;
+  const double k_min, dk, boxsize;
   const int nbin;
   std::vector<DiscreteWaveVector>* modes;
 };
@@ -42,7 +42,7 @@ class Kaiser : public Model {
 
 class Kaiser : public Model {
  public:
-  Kaiser(const double k_min_, const double k_max_, const double dk_,
+  Kaiser(const double k_min_, const double dk_, const int nbin_,
 	 const double boxsize,
 	 PyObject* py_k, PyObject* py_P);
   virtual void evaluate(const std::vector<double>& param,
