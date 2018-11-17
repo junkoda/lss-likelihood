@@ -7,7 +7,7 @@
 #include "py_power_spectrum.h"
 
 //
-//
+// Base class `Model`
 //
 class Model {
  public:
@@ -40,6 +40,7 @@ class Kaiser : public Model {
 };
 */
 
+// Kaiser model with damping (aka dispersion model)
 class Kaiser : public Model {
  public:
   Kaiser(const double k_min_, const double dk_, const int nbin_,
@@ -50,8 +51,21 @@ class Kaiser : public Model {
 			std::vector<double>& v_P2,
 			std::vector<double>& v_P4) const;
 
-  // real-space power spectrum
-  //std::vector<double> v_k, v_P;
+  // coefficient of discrete Legendre multipoles
+  vector<double> coef;
+};
+
+// Scoccimarro model
+class Scoccimarro : public Model {
+ public:
+  Scoccimarro(const double k_min_, const double dk_, const int nbin_,
+	      const double boxsize,
+	      PyObject* py_k,
+	      PyObject* py_Pdd, PyObject* py_Pdt, PyObject* py_Ptt);
+  virtual void evaluate(const std::vector<double>& param,
+			std::vector<double>& v_P0,
+			std::vector<double>& v_P2,
+			std::vector<double>& v_P4) const;
 
   // coefficient of discrete Legendre multipoles
   vector<double> coef;
@@ -62,7 +76,8 @@ class Kaiser : public Model {
 PyObject* py_model_get_nbin(PyObject* self, PyObject* args);
 PyObject* py_model_nmodes(PyObject* self, PyObject* args);
 PyObject* py_model_exp_moment(PyObject* self, PyObject* args);
-
+PyObject* py_model_evaluate(PyObject* self, PyObject* args);
+  
 PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args);
-PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args);
+PyObject* py_model_scoccimarro_alloc(PyObject* self, PyObject* args);
 #endif
