@@ -10,6 +10,8 @@ struct DiscreteWaveVector {
   double k, mu2;
   int w;
   double Pdd, Pdt, Ptt;
+  double A11, A12, A22, A23, A33;
+  double B111, B211, B112, B212, B312, B122, B222, B322, B422;
 };
 
 std::vector<DiscreteWaveVector>*

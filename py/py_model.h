@@ -72,6 +72,24 @@ class Scoccimarro : public Model {
 };
 
 
+// Taruay model
+class Taruya : public Model {
+ public:
+  Taruya(const double k_min_, const double dk_, const int nbin_,
+	 const double boxsize,
+	 PyObject* py_k,
+	 PyObject* py_Pdd, PyObject* py_Pdt, PyObject* py_Ptt,
+	 PyObject* py_AB);
+  virtual void evaluate(const std::vector<double>& param,
+			std::vector<double>& v_P0,
+			std::vector<double>& v_P2,
+			std::vector<double>& v_P4) const;
+
+  // coefficient of discrete Legendre multipoles
+  vector<double> coef;
+};
+
+
 //PyObject* py_model_alloc(PyObject* self, PyObject* args);
 PyObject* py_model_get_nbin(PyObject* self, PyObject* args);
 PyObject* py_model_nmodes(PyObject* self, PyObject* args);

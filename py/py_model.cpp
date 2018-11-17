@@ -8,6 +8,7 @@
 #include "py_error.h"
 #include "py_assert.h"
 #include "py_multipole.h"
+#include "py_interp.h"
 #include "py_model.h"
 
 using namespace std;
@@ -506,6 +507,69 @@ Scoccimarro::Scoccimarro(const double k_min_, const double dk_, const int nbin_,
     }
   } 
   
+  // Compute coefficients of discrete Legendre polynomials `coef`
+  multipole_compute_discrete_legendre(k_min, dk, nbin,
+				      boxsize, coef);
+
+
+}
+
+//
+// Taruya
+//
+Taruya::Taruya(const double k_min_, const double dk_, const int nbin_,
+			 const double boxsize_,
+			 PyObject* py_k,
+			 PyObject* py_Pdd, PyObject* py_Pdt, PyObject* py_Ptt,
+			 PyObject* py_AB) :
+  Model(k_min_, dk_, nbin_, boxsize_)
+{
+  PowerSpectrum pdd(py_k, py_Pdd);
+  PowerSpectrum pdt(py_k, py_Pdt);
+  PowerSpectrum ptt(py_k, py_Ptt);
+
+  // Set realspace power spectrum to modes
+  // this->modes is setup by Model::Model constructor
+  for(int ibin=0; ibin<nbin; ++ibin) {
+    for(vector<DiscreteWaveVector>::iterator p= modes[ibin].begin();
+	p != modes[ibin].end(); ++p) {
+      p->Pdd= pdd.P(p->k);
+      p->Pdt= pdt.P(p->k);
+      p->Ptt= ptt.P(p->k);
+    }
+  }
+
+  // Load precomputed Taruya AB terms
+  vector<double> v_AB;
+  size_t ncol= py_util_array2_as_vector("TaruyaAB", py_AB, v_AB);
+  if(ncol != 15) throw TypeError();
+  size_t nrow = v_AB.size() / ncol;
+
+  Interp interp(v_AB, ncol, nrow);
+
+  // Set TaruyaAB to `this->modes`
+  for(int ibin=0; ibin<nbin; ++ibin) {
+    for(vector<DiscreteWaveVector>::iterator p= modes[ibin].begin();
+	p != modes[ibin].end(); ++p) {
+      const double k= p->k;
+      p->A11=  interp(1,  k);
+      p->A12=  interp(2,  k);
+      p->A22=  interp(3,  k);
+      p->A23=  interp(4,  k);
+      p->A33=  interp(5,  k);
+      p->B111= interp(6,  k);
+      p->B211= interp(7,  k);
+      p->B112= interp(8,  k);
+      p->B212= interp(9,  k);
+      p->B312= interp(10, k);
+      p->B122= interp(11, k);
+      p->B222= interp(12, k);
+      p->B322= interp(13, k);
+      p->B422= interp(14, k);
+    }
+  }
+
+
   // Compute coefficients of discrete Legendre polynomials `coef`
   multipole_compute_discrete_legendre(k_min, dk, nbin,
 				      boxsize, coef);
