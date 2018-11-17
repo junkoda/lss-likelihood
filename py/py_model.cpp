@@ -236,52 +236,6 @@ PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args)
   return NULL;
 }
 
-// unnecessary
-/*
-PyObject* py_model_kaiser_evaluate(PyObject* self, PyObject* args)
-{
-  // _model_kaiser_alloc(_model, b, f, sigma, P0, P2, P4)
-  //
-  // Args:
-  // _model: _Model pointer
-  // b, f, sigma (double): parameters
-  // P0, P2, P4 (array): model prediction
-  //
-  double b, f, sigma;
-  PyObject *py_model, *py_P0, *py_P2, *py_P4;
-
-  if(!PyArg_ParseTuple(args, "OdddOOO",
-		       &py_model,
-		       &b, &f, &sigma,
-		       &py_P0, &py_P2, &py_P4))
-    return NULL;
-
-  Model* const model=
-    (Model*) PyCapsule_GetPointer(py_model, "_Model");
-  py_assert_ptr(model);
-
-  Kaiser* const kaiser= dynamic_cast<Kaiser*>(model);
-
-  const size_t n= kaiser->nbin;
-  
-  vector<double> v_P0(n), v_P2(n), v_P4(n);
-  vector<double> params(3, 0.0);
-  params[0]= b; params[1]= f; params[2]= sigma;
-
-  kaiser->evaluate(params, v_P0, v_P2, v_P4);
-  
-  try {
-    py_util_vector_as_array("P0", v_P0, py_P0);
-    py_util_vector_as_array("P2", v_P2, py_P2);
-    py_util_vector_as_array("P4", v_P4, py_P4);
-  }
-  catch(TypeError) {
-    return NULL;
-  }
-
-  Py_RETURN_NONE;
-}
-*/
 
 //
 // Scoccimarro
@@ -319,12 +273,17 @@ Model::Model(const double k_min_, const double dk_, const int nbin_,
 	     const double boxsize_) :
   k_min(k_min_), dk(dk_), boxsize(boxsize_), nbin(nbin_)
 {
+  // k, mu on 3D grid points
   modes= multipole_construct_discrete_wavevectors(k_min, dk, nbin, boxsize);
+
+  // Compute coefficients of discrete Legendre polynomials `coef`
+  multipole_compute_discrete_legendre(k_min, dk, nbin,
+				      boxsize, coef);
 }
 
 Model::~Model()
 {
-
+  delete [] modes;
 }
 
 void Model::nmodes(vector<double>& v_nmodes) const
@@ -348,7 +307,7 @@ void Model::nmodes(vector<double>& v_nmodes) const
 
 //
 // Kaiser
-//
+// continious integral
 /*
 Kaiser::Kaiser(const double k_min_, const double k_max_, const double dk_,
 	       PyObject* py_k, PyObject* py_P) :
@@ -421,13 +380,7 @@ Kaiser::Kaiser(const double k_min_, const double dk_, const int nbin_,
 	p != modes[ibin].end(); ++p) {
       p->Pdd= ps.P(p->k);
     }
-  } 
-  
-  // Compute coefficients of discrete Legendre polynomials `coef`
-  multipole_compute_discrete_legendre(k_min, dk, nbin,
-				      boxsize, coef);
-
-
+  }
 }
 
 void Kaiser::evaluate(const vector<double>& params,
@@ -505,14 +458,69 @@ Scoccimarro::Scoccimarro(const double k_min_, const double dk_, const int nbin_,
       p->Pdt= pdt.P(p->k);
       p->Ptt= ptt.P(p->k);
     }
-  } 
-  
-  // Compute coefficients of discrete Legendre polynomials `coef`
-  multipole_compute_discrete_legendre(k_min, dk, nbin,
-				      boxsize, coef);
-
-
+  }   
 }
+
+
+void Scoccimarro::evaluate(const vector<double>& params,
+			   vector<double>& v_P0,
+			   vector<double>& v_P2,
+			   vector<double>& v_P4) const
+{
+  size_t n= static_cast<size_t>(nbin);
+  assert(v_P0.size() == n);
+  assert(v_P2.size() == n);
+  assert(v_P4.size() == n);
+  assert(params.size() == 3);
+
+  const double b= params[0];
+  const double f= params[1];
+  const double s= params[2];
+
+  const double b2= b*b;
+  const double bf2= 2.0*b*f;
+  const double ff= f*f;
+
+  for(size_t i=0; i<n; ++i) {
+    int nmodes= 0;
+    double P0= 0.0;
+    double P2= 0.0;
+    double P4= 0.0;
+    
+    for(vector<DiscreteWaveVector>::iterator p= modes[i].begin();
+	p != modes[i].end(); ++p) {
+      double k= p->k;
+      double mu2= p->mu2;
+      double mu4= mu2*mu2;
+
+      nmodes += p->w;
+
+      double Pdd= p->w*p->Pdd;
+      double Pdt= p->w*p->Pdt;
+      double Ptt= p->w*p->Ptt;
+
+      double Ps= (b2*Pdd + bf2*mu2*Pdt + ff*mu4*Ptt)*exp(-k*k*s*s*mu2);
+	
+      double l2= coef[5*i] + coef[5*i + 1]*mu2;
+      double l4= coef[5*i + 2] + coef[5*i + 3]*mu2
+	         + coef[5*i + 4]*mu4;
+
+
+      P0 += Ps;
+      P2 += l2*Ps;
+      P4 += l4*Ps;
+    }
+
+    double fac= 1.0/static_cast<double>(nmodes);
+
+    
+    // (2l + 1) for multipole moments
+    v_P0[i]= fac*P0;
+    v_P2[i]= 5.0*fac*P2;
+    v_P4[i]= 9.0*fac*P4;
+  }
+}
+
 
 //
 // Taruya
@@ -568,16 +576,10 @@ Taruya::Taruya(const double k_min_, const double dk_, const int nbin_,
       p->B422= interp(14, k);
     }
   }
-
-
-  // Compute coefficients of discrete Legendre polynomials `coef`
-  multipole_compute_discrete_legendre(k_min, dk, nbin,
-				      boxsize, coef);
-
-
 }
 
-void Scoccimarro::evaluate(const vector<double>& params,
+
+void Taruya::evaluate(const vector<double>& params,
 			   vector<double>& v_P0,
 			   vector<double>& v_P2,
 			   vector<double>& v_P4) const
@@ -594,7 +596,11 @@ void Scoccimarro::evaluate(const vector<double>& params,
 
   const double b2= b*b;
   const double bf2= 2.0*b*f;
-  const double ff= f*f;
+  const double f2= f*f;
+  const double f3= f*f2;
+  const double f4= f2*f2;
+  const double f6= f4*f2;
+  const double f8= f4*f4;
 
   for(size_t i=0; i<n; ++i) {
     int nmodes= 0;
@@ -607,21 +613,31 @@ void Scoccimarro::evaluate(const vector<double>& params,
       double k= p->k;
       double mu2= p->mu2;
       double mu4= mu2*mu2;
+      double mu6= mu4*mu4;
+      double mu8= mu4*mu4;
 
       nmodes += p->w;
 
-      double dmp= exp(-k*k*s*s*mu2);
-      double Pdd= p->w*p->Pdd*dmp;
-      double Pdt= p->w*p->Pdt*dmp;
-      double Ptt= p->w*p->Ptt*dmp;
+      double Pdd= p->w*p->Pdd;
+      double Pdt= p->w*p->Pdt;
+      double Ptt= p->w*p->Ptt;
+      double A= p->w*(p->A11*f*mu2
+		      + f2*(p->A12*mu2 + p->A22*mu4)
+		      + f3*(p->A23*mu4 + p->A33*mu6));
+      double B= p->w*(f2*(p->B111*mu2 + p->B211*mu4)
+		      - f3*(p->B112*mu2 + p->B212*mu4 + p->B312*mu6)
+		      + f4*(p->B122*mu2 + p->B222*mu4 + p->B322*mu6
+			    + p->B422*mu8));
+      
+      double Ps= (b2*Pdd + bf2*mu2*Pdt + f2*mu4*Ptt + A + B)*exp(-k*k*s*s*mu2);
 	
       double l2= coef[5*i] + coef[5*i + 1]*mu2;
       double l4= coef[5*i + 2] + coef[5*i + 3]*mu2
 	         + coef[5*i + 4]*mu4;
       
-      P0 += b2*Pdd + bf2*mu2*Pdt + ff*mu4*Ptt;
-      P2 += l2*(b2*Pdd + bf2*mu2*Pdt + ff*mu4*Ptt);
-      P4 += l4*(b2*Pdd + bf2*mu2*Pdt + ff*mu4*Ptt);
+      P0 += Ps;
+      P2 += l2*Ps;
+      P4 += l4*Ps;
     }
 
     double fac= 1.0/static_cast<double>(nmodes);
@@ -633,5 +649,3 @@ void Scoccimarro::evaluate(const vector<double>& params,
     v_P4[i]= 9.0*fac*P4;
   }
 }
-
-

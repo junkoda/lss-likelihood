@@ -22,7 +22,12 @@ class Model {
     
   const double k_min, dk, boxsize;
   const int nbin;
+
+  // Wave vectors in 3D grid
   std::vector<DiscreteWaveVector>* modes;
+
+  // Coefficient of discrete Legendre multipoles
+  vector<double> coef;
 };
 
 /*
@@ -51,8 +56,6 @@ class Kaiser : public Model {
 			std::vector<double>& v_P2,
 			std::vector<double>& v_P4) const;
 
-  // coefficient of discrete Legendre multipoles
-  vector<double> coef;
 };
 
 // Scoccimarro model
@@ -66,9 +69,6 @@ class Scoccimarro : public Model {
 			std::vector<double>& v_P0,
 			std::vector<double>& v_P2,
 			std::vector<double>& v_P4) const;
-
-  // coefficient of discrete Legendre multipoles
-  vector<double> coef;
 };
 
 
@@ -84,9 +84,6 @@ class Taruya : public Model {
 			std::vector<double>& v_P0,
 			std::vector<double>& v_P2,
 			std::vector<double>& v_P4) const;
-
-  // coefficient of discrete Legendre multipoles
-  vector<double> coef;
 };
 
 
