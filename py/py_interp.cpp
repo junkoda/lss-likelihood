@@ -1,18 +1,23 @@
-#include "py_interp.h"
+#include <iostream> // DEBUG
 #include <cstdlib>
+#include "py_interp.h"
 
 using namespace std;
 
 void copy_column(const vector<double>& v,
-		   const size_t nrow, const size_t ncol,
-		   const size_t icol, vector<double>& v_col)
+		 const size_t nrow, const size_t ncol,
+		 const size_t icol, vector<double>& v_col)
 {
   assert(v.size() == nrow*ncol);
   v_col.clear();
   v_col.reserve(nrow);
 
-  for(size_t i=0; i<nrow; ++i)
+  //cerr << "copy_column " << nrow << " " << ncol << " " << icol << endl;
+
+  for(size_t i=0; i<nrow; ++i) {
     v_col.push_back(v[ncol*i + icol]);
+    //cerr << v[ncol*i + icol] << endl;
+  }
 }
 
 Interp::Interp(const vector<double>& v, const size_t nrow, const int ncol_) :

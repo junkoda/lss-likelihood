@@ -95,4 +95,5 @@ PyObject* py_model_evaluate(PyObject* self, PyObject* args);
   
 PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args);
 PyObject* py_model_scoccimarro_alloc(PyObject* self, PyObject* args);
+PyObject* py_model_taruya_alloc(PyObject* self, PyObject* args);
 #endif

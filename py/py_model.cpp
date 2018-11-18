@@ -211,9 +211,7 @@ PyObject* py_model_evaluate(PyObject* self, PyObject* args)
   Py_RETURN_NONE;
 }
 
-//
 // Kaiser
-//
 PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args)
 {
   // _model_kaiser_alloc(k_min, dk, nbin, boxsize, k, P)
@@ -237,9 +235,7 @@ PyObject* py_model_kaiser_alloc(PyObject* self, PyObject* args)
 }
 
 
-//
 // Scoccimarro
-//
 PyObject* py_model_scoccimarro_alloc(PyObject* self, PyObject* args)
 {
   // _model_scoccimarro_alloc(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt)
@@ -249,12 +245,38 @@ PyObject* py_model_scoccimarro_alloc(PyObject* self, PyObject* args)
     
   if(!PyArg_ParseTuple(args, "ddidOOOO",
 		       &k_min, &dk, &nbin, &boxsize,
-		       &py_k, &py_Pdd, &py_Pdt, &py_Ptt ))
+		       &py_k, &py_Pdd, &py_Pdt, &py_Ptt))
     return NULL;
 
   try {
     return PyCapsule_New(new Scoccimarro(k_min, dk, nbin, boxsize, py_k,
 					 py_Pdd, py_Pdt, py_Ptt),
+			 "_Model", py_model_free);
+  }
+  catch(TypeError) {
+    return NULL;
+  }
+
+  return NULL;
+}
+
+
+// Taruya
+PyObject* py_model_taruya_alloc(PyObject* self, PyObject* args)
+{
+  // _model_scoccimarro_alloc(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt, AB)
+  double k_min, dk, boxsize;
+  int nbin;
+  PyObject *py_k, *py_Pdd, *py_Pdt,*py_Ptt, *py_AB;
+    
+  if(!PyArg_ParseTuple(args, "ddidOOOOO",
+		       &k_min, &dk, &nbin, &boxsize,
+		       &py_k, &py_Pdd, &py_Pdt, &py_Ptt, &py_AB))
+    return NULL;
+
+  try {
+    return PyCapsule_New(new Taruya(k_min, dk, nbin, boxsize, py_k,
+				    py_Pdd, py_Pdt, py_Ptt, py_AB),
 			 "_Model", py_model_free);
   }
   catch(TypeError) {
@@ -526,10 +548,10 @@ void Scoccimarro::evaluate(const vector<double>& params,
 // Taruya
 //
 Taruya::Taruya(const double k_min_, const double dk_, const int nbin_,
-			 const double boxsize_,
-			 PyObject* py_k,
-			 PyObject* py_Pdd, PyObject* py_Pdt, PyObject* py_Ptt,
-			 PyObject* py_AB) :
+	       const double boxsize_,
+	       PyObject* py_k,
+	       PyObject* py_Pdd, PyObject* py_Pdt, PyObject* py_Ptt,
+	       PyObject* py_AB) :
   Model(k_min_, dk_, nbin_, boxsize_)
 {
   PowerSpectrum pdd(py_k, py_Pdd);
@@ -553,12 +575,15 @@ Taruya::Taruya(const double k_min_, const double dk_, const int nbin_,
   if(ncol != 15) throw TypeError();
   size_t nrow = v_AB.size() / ncol;
 
-  Interp interp(v_AB, ncol, nrow);
+  Interp interp(v_AB, nrow, ncol);
 
   // Set TaruyaAB to `this->modes`
   for(int ibin=0; ibin<nbin; ++ibin) {
     for(vector<DiscreteWaveVector>::iterator p= modes[ibin].begin();
 	p != modes[ibin].end(); ++p) {
+      // The order of Bnab is different from original Taruya's Fortran
+      // code output. Also, our Bnab does not contain sign (-1)^{a + b}
+       
       const double k= p->k;
       p->A11=  interp(1,  k);
       p->A12=  interp(2,  k);
@@ -599,8 +624,6 @@ void Taruya::evaluate(const vector<double>& params,
   const double f2= f*f;
   const double f3= f*f2;
   const double f4= f2*f2;
-  const double f6= f4*f2;
-  const double f8= f4*f4;
 
   for(size_t i=0; i<n; ++i) {
     int nmodes= 0;
@@ -628,6 +651,7 @@ void Taruya::evaluate(const vector<double>& params,
 		      - f3*(p->B112*mu2 + p->B212*mu4 + p->B312*mu6)
 		      + f4*(p->B122*mu2 + p->B222*mu4 + p->B322*mu6
 			    + p->B422*mu8));
+      // (-1)^{a + b} sign is here not in the file
       
       double Ps= (b2*Pdd + bf2*mu2*Pdt + f2*mu4*Ptt + A + B)*exp(-k*k*s*s*mu2);
 	

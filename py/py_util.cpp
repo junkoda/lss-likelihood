@@ -1,3 +1,5 @@
+//#include <iostream> // DEBUG
+#include <cassert>
 #include "py_util.h"
 #include "py_error.h"
 
@@ -113,18 +115,29 @@ size_t py_util_array2_as_vector(const char name[],
   const size_t stride_row= buf.strides[0];
   const size_t stride_col= buf.strides[1];
 
+  // DEBUG
+  //cerr << "stride_row " << stride_row << endl;
+  //cerr << "stride_col " << stride_col << endl;
+  //cerr << "ncol " << ncol << endl;
+
+  v.clear();
   v.reserve(n*ncol);
   
   for(size_t i=0; i<n; ++i) {
-    double const *x = x;
+    double const *x = x_row;
+    //cerr << "row " << i << endl;
     for(size_t j=0; j<ncol; ++j) {
       v.push_back(*x);
+      //cerr << *x << endl;
 
       x = (double const *) ((char const *) x + stride_col); // next column
     }
+    //if(i > 2) abort();///DEBUG
     x_row = (double const *) ((char const *) x_row + stride_row); // next row
   }
 
+  assert(v.size() == n*ncol);
+  
   PyBuffer_Release(&buf);
 
   return ncol;
