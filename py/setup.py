@@ -36,7 +36,7 @@ if 'LDIRS' in os.environ:
 
 
 
-libs = ['gsl'] #os.environ['LIBS'].split()
+libs = ['gsl', 'gslcblas'] #os.environ['LIBS'].split()
 
 setup(name='lss_likelihood',
       version='0.0.1',
