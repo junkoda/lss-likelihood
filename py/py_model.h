@@ -88,6 +88,8 @@ class Taruya : public Model {
 
 
 //PyObject* py_model_alloc(PyObject* self, PyObject* args);
+void py_model_free(PyObject *obj);
+
 PyObject* py_model_get_nbin(PyObject* self, PyObject* args);
 PyObject* py_model_nmodes(PyObject* self, PyObject* args);
 PyObject* py_model_exp_moment(PyObject* self, PyObject* args);

@@ -20,7 +20,7 @@ static const double sqrt_pi = sqrt(M_PI);
 // static function
 //
 
-static void py_model_free(PyObject *obj)
+void py_model_free(PyObject *obj)
 {
   // Delete the power spectrum object
   // Called automatically by Python
@@ -264,7 +264,7 @@ PyObject* py_model_scoccimarro_alloc(PyObject* self, PyObject* args)
 // Taruya
 PyObject* py_model_taruya_alloc(PyObject* self, PyObject* args)
 {
-  // _model_scoccimarro_alloc(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt, AB)
+  // _model_taruya_alloc(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt, AB)
   double k_min, dk, boxsize;
   int nbin;
   PyObject *py_k, *py_Pdd, *py_Pdt,*py_Ptt, *py_AB;

@@ -77,29 +77,6 @@ def Scoccimarro(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt):
     return Model(_model)
 
 
-def Scoccimarro(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt):
-    """
-    Create Scoccimarro model object
-    
-    Args:
-      k_min (float)  : minimum edge of k bin [h/Mpc]
-      dk (float)     : bin width [h/Mpc]
-      nbin (int)     : number of k bins
-      boxsize (float): boxsize of FFT grid
-      k (array)      : k of real-space power spectra
-      Pdd (array)    : Real-space matter power spectrum P_delta_delta(k)
-      Pdt (array)    : Real-space matter theta power P_delta_theta(k)
-      Ptt (array)    : Real-space matter theta power P_theta_theta(k)
-
-    Returns:
-      Model object
-    """
-    _model = c._model_scoccimarro_alloc(k_min, dk, nbin, boxsize, k,
-                                        Pdd, Pdt, Ptt)
-    
-    return Model(_model)
-
-
 def Taruya(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt, AB):
     """
     Create Scoccimarro model object
@@ -129,6 +106,38 @@ def Taruya(k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt, AB):
                         AB.shape))
 
     _model = c._model_taruya_alloc(k_min, dk, nbin, boxsize, k,
+                                   Pdd, Pdt, Ptt, AB)
+    
+    return Model(_model)
+
+def BetterModel(imodel, k_min, dk, nbin, boxsize, k, Pdd, Pdt, Ptt, AB):
+    """
+    Create Scoccimarro model object
+    
+    Args:
+      imodel (int)   : model number
+      k_min (float)  : minimum edge of k bin [h/Mpc]
+      dk (float)     : bin width [h/Mpc]
+      nbin (int)     : number of k bins
+      boxsize (float): boxsize of FFT grid
+      k (array)      : k of real-space power spectra
+      Pdd (array)    : Real-space matter power spectrum P_delta_delta(k)
+      Pdt (array)    : Real-space matter theta power P_delta_theta(k)
+      Ptt (array)    : Real-space matter theta power P_theta_theta(k)
+      AB (array)     : 15-column array with Taruya AB terms
+                       k, A11, A12, A22, A23, A33,
+                       B111, B211, B112 + B121, B212 + B221, B312 + B321,
+                       B122, B222, B322, B422
+
+
+    Returns:
+      Model object
+    """
+
+    if not (imodel == 1):
+        raise ValueError('Unknown model number: %d' % imodel)
+    
+    _model = c._better_model_alloc(imodel, k_min, dk, nbin, boxsize, k,
                                    Pdd, Pdt, Ptt, AB)
     
     return Model(_model)

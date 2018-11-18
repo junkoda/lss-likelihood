@@ -5,6 +5,7 @@
 #include "Python.h"
 
 #include "py_model.h"
+#include "py_better_model.h"
 #include "py_data.h"
 #include "py_likelihood.h"
 
@@ -25,6 +26,9 @@ static PyMethodDef methods[] = {
    "_model_scoccimarro_alloc(), returns _Model pointer"},
   {"_model_taruya_alloc", py_model_taruya_alloc, METH_VARARGS,
    "_model_taruya_alloc(k_min, dk, nbin, Pdd, Pdt, Ptt, AB)"},
+
+  {"_better_model_alloc", py_better_model_alloc, METH_VARARGS,
+   "_better_model_alloc(imodel, k_min, dk, nbin, Pdd, Pdt, Ptt, AB)"},
   
   {"_data_alloc", py_data_alloc, METH_VARARGS,
    "_data_alloc(P0, P2, P4)"},
