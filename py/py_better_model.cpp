@@ -122,8 +122,9 @@ void Model1::evaluate(const vector<double>& params,
 
   const double b= params[0];
   const double f= params[1];
-  const double sigma0= params[2];
-  const double sigma1= params[3];
+  const double sigma2_0= params[2]; // sigma2(k=0)
+  const double sigma2_1= params[3]; // sigma2(k=0.2)
+  const double sigma2_a= (sigma2_1 - sigma2_0)/0.2;
 
   const double b2= b*b;
   const double bf2= 2.0*b*f;
@@ -144,7 +145,7 @@ void Model1::evaluate(const vector<double>& params,
       double mu4= mu2*mu2;
       double mu6= mu4*mu4;
       double mu8= mu4*mu4;
-      double s= sigma0 + sigma1*k;
+      double s2= sigma2_0 + sigma2_a*k;
 	  
 
       nmodes += p->w;
@@ -156,12 +157,12 @@ void Model1::evaluate(const vector<double>& params,
 		      + f2*(p->A12*mu2 + p->A22*mu4)
 		      + f3*(p->A23*mu4 + p->A33*mu6));
       double B= p->w*(f2*(p->B111*mu2 + p->B211*mu4)
-		      - f3*(p->B112*mu2 + p->B212*mu4 + p->B312*mu6)
-		      + f4*(p->B122*mu2 + p->B222*mu4 + p->B322*mu6
-			    + p->B422*mu8));
+		      - f3*(p->B112*mu2 + p->B212*mu4 + p->B312*mu6));
+      //+ f4*(p->B122*mu2 + p->B222*mu4 + p->B322*mu6
+      //+ p->B422*mu8));
       // (-1)^{a + b} sign is here not in the file
       
-      double Ps= (b2*Pdd + bf2*mu2*Pdt + f2*mu4*Ptt + A + B)*exp(-k*k*s*s*mu2);
+      double Ps= (b2*Pdd + bf2*mu2*Pdt + f2*mu4*Ptt + A + B)*exp(-k*k*s2*mu2);
 	
       double l2= coef[5*i] + coef[5*i + 1]*mu2;
       double l4= coef[5*i + 2] + coef[5*i + 3]*mu2
